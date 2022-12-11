@@ -210,9 +210,11 @@
 #if __riscv_xlen > 32
 #define ENVCFG_STCE			(_ULL(1) << 63)
 #define ENVCFG_PBMTE			(_ULL(1) << 62)
+#define ENVCFG_CFI			(_ULL(1) << 60)
 #else
 #define ENVCFGH_STCE			(_UL(1) << 31)
 #define ENVCFGH_PBMTE			(_UL(1) << 30)
+#define ENVCFGH_CFI			(_UL(1) << 28)
 #endif
 #define ENVCFG_CBZE			(_UL(1) << 7)
 #define ENVCFG_CBCFE			(_UL(1) << 6)
@@ -229,6 +231,8 @@
 #define CSR_USTATUS			0x000
 #define CSR_UIE				0x004
 #define CSR_UTVEC			0x005
+#define CSR_LPLR			0x006
+#define CSR_SSP				0x020
 
 /* User Trap Handling (N-extension) */
 #define CSR_USCRATCH			0x040
