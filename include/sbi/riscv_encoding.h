@@ -32,6 +32,8 @@
 #define MSTATUS_TVM			_UL(0x00100000)
 #define MSTATUS_TW			_UL(0x00200000)
 #define MSTATUS_TSR			_UL(0x00400000)
+#define MSTATUS_SPELP		_UL(0x00800000) /* zicfilp -v0.3.8 */
+#define MSTATUS_MPELP		_UL(0x020000000000) /* zicfilp -v0.3.8 */
 #define MSTATUS32_SD			_UL(0x80000000)
 #if __riscv_xlen == 64
 #define MSTATUS_UXL			_ULL(0x0000000300000000)
@@ -214,6 +216,8 @@
 #define ENVCFGH_STCE			(_UL(1) << 31)
 #define ENVCFGH_PBMTE			(_UL(1) << 30)
 #endif
+#define ENVCFG_CFI_SSE			(_ULL(1) << 3)
+#define ENVCFG_CFI_LPE			(_ULL(1) << 2)
 #define ENVCFG_CBZE			(_UL(1) << 7)
 #define ENVCFG_CBCFE			(_UL(1) << 6)
 #define ENVCFG_CBIE_SHIFT		4
@@ -229,6 +233,7 @@
 #define CSR_USTATUS			0x000
 #define CSR_UIE				0x004
 #define CSR_UTVEC			0x005
+#define CSR_SSP				0x011
 
 /* User Trap Handling (N-extension) */
 #define CSR_USCRATCH			0x040
