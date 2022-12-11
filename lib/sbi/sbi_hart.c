@@ -157,6 +157,16 @@ static void mstatus_init(struct sbi_scratch *scratch)
 #endif
 		}
 
+		/*
+		 * By default allow shadow stack opreations in S/HS mode
+		 * don't enable landing pad because supervisor may keep faulting
+		 * due to missing landing pad. Open up a SBI interface to enable
+		 * landing pad
+		 */
+		if (sbi_hart_has_extension(scratch, SBI_HART_EXT_ZICFISS)) {
+			menvcfg_val |= ENVCFG_CFI_SSE;
+		}
+
 		csr_write(CSR_MENVCFG, menvcfg_val);
 	}
 
@@ -446,6 +456,12 @@ static inline char *sbi_hart_extension_id2string(int ext)
 	case SBI_HART_EXT_SMSTATEEN:
 		estr = "smstateen";
 		break;
+	case SBI_HART_EXT_ZICFILP:
+		estr = "zicfilp";
+		break;
+	case SBI_HART_EXT_ZICFISS:
+		estr = "zicfiss";
+		break;
 	default:
 		break;
 	}
@@ -555,6 +571,7 @@ static int hart_detect_features(struct sbi_scratch *scratch)
 		sbi_scratch_offset_ptr(scratch, hart_features_offset);
 	unsigned long val, oldval;
 	int rc;
+	bool ssp_exist;
 
 	/* If hart features already detected then do nothing */
 	if (hfeatures->detected)
@@ -691,6 +708,18 @@ __mhpm_skip:
 		if (!trap.cause)
 			__sbi_hart_update_extension(hfeatures,
 					SBI_HART_EXT_SMSTATEEN, true);
+	}
+
+	if (hfeatures->priv_version >= SBI_HART_PRIV_VER_1_12) {
+		val = csr_read_allowed(CSR_SSP, (unsigned long)&trap);
+		ssp_exist = trap.cause == 0;
+        /* TODO: need a better to detect zicfilp */
+		if (ssp_exist) {
+			__sbi_hart_update_extension(hfeatures,
+					SBI_HART_EXT_ZICFISS, true);
+			__sbi_hart_update_extension(hfeatures,
+					SBI_HART_EXT_ZICFILP, true);
+        }
 	}
 
 	/* Let platform populate extensions */
