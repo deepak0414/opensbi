@@ -165,6 +165,16 @@ static void mstatus_init(struct sbi_scratch *scratch)
 #endif
 		}
 
+		if (sbi_hart_has_extension(scratch, SBI_HART_EXT_SSLPCFI)) {
+#if __riscv_xlen == 32
+			unsigned long menvcfgh_val;
+			menvcfgh_val = csr_read(CSR_MENVCFGH);
+			menvcfgh_val |= ENVCFGH_CFI;
+			csr_write(CSR_MENVCFGH, menvcfgh_val);
+#else
+			menvcfg_val |= ENVCFG_CFI;
+#endif
+		}
 		csr_write(CSR_MENVCFG, menvcfg_val);
 	}
 
@@ -216,7 +226,8 @@ static int delegate_traps(struct sbi_scratch *scratch)
 	if (sbi_platform_has_mfaults_delegation(plat))
 		exceptions |= (1U << CAUSE_FETCH_PAGE_FAULT) |
 			      (1U << CAUSE_LOAD_PAGE_FAULT) |
-			      (1U << CAUSE_STORE_PAGE_FAULT);
+			      (1U << CAUSE_STORE_PAGE_FAULT) |
+			      (1U << CAUSE_ILLEGAL_INSTRUCTION);
 
 	/*
 	 * If hypervisor extension available then we only handle hypervisor
@@ -543,6 +554,7 @@ static int hart_detect_features(struct sbi_scratch *scratch)
 		sbi_scratch_offset_ptr(scratch, hart_features_offset);
 	unsigned long val, oldval;
 	int rc;
+	int ssp_exist, lplr_exist;
 
 	/* If hart features already detected then do nothing */
 	if (hfeatures->detected)
@@ -679,6 +691,16 @@ __mhpm_skip:
 		if (!trap.cause)
 			__sbi_hart_update_extension(hfeatures,
 					SBI_HART_EXT_SMSTATEEN, true);
+	}
+
+	if (hfeatures->priv_version >= SBI_HART_PRIV_VER_1_12) {
+		val = csr_read_allowed(CSR_SSP, (unsigned long)&trap);
+		ssp_exist = trap.cause?0:1;
+		val = csr_read_allowed(CSR_LPLR, (unsigned long)&trap);
+		lplr_exist = trap.cause?0:1;
+		if (lplr_exist & ssp_exist)
+			__sbi_hart_update_extension(hfeatures,
+					SBI_HART_EXT_SSLPCFI, true);
 	}
 
 	/* Let platform populate extensions */
